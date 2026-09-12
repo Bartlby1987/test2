@@ -285,6 +285,33 @@ td.url {
   color: var(--muted);
   font-size: 0.8rem;
   pointer-events: none;
+  max-width: calc(100% - 120px);
+}
+
+.map-controls {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  display: flex;
+  gap: 0.35rem;
+  z-index: 2;
+}
+
+.map-controls button {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: 6px;
+  background: #2b2f3a;
+  color: #fafafa;
+  border: 1px solid #3d4450;
+  font-size: 1.1rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.map-controls button:hover {
+  background: #3a4150;
 }
 
 .map-caption {
