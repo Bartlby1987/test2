@@ -16,7 +16,7 @@ import './App.css'
 
 const DEFAULT_SITES = `https://site-analyzer.ru/
 https://rocketcrawler.ru/
-https://lenta.ru/`
+https://thrive-it.ru/`
 
 export default function App() {
   const [query, setQuery] = useState('сканирование сайта на ошибки')

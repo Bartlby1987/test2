@@ -60,7 +60,7 @@ export function RelevanceMap({
       y: p.y,
       z: p.z,
       color: data.siteColors[p.site] ?? '#888',
-      size: 3.5 + p.score * 9,
+      size: 3 + p.score * 7,
       alpha: p.score >= threshold ? 1 : 0.28,
       label: `${p.title}\n${p.url}\nбалл: ${p.score.toFixed(3)}`,
     }))
@@ -106,7 +106,7 @@ export function RelevanceMap({
         const z1 = -x * sy + z * cy
         const y1 = y * cp - z1 * sp
         const z2 = y * sp + z1 * cp
-        const scale = 240 / (1.55 + z2 * 0.35)
+        const scale = 200 / (1.55 + z2 * 0.35)
         return {
           sx: w / 2 + x1 * scale,
           sy: h / 2 - y1 * scale - 12,
@@ -120,37 +120,101 @@ export function RelevanceMap({
     ctx.fillStyle = '#0e1117'
     ctx.fillRect(0, 0, w, h)
 
-    ctx.strokeStyle = '#2a2f3a'
+    // Full 3D box grid (all faces), like Plotly scene
+    const half = span * 0.72
+    const steps = 6
+    ctx.strokeStyle = '#3a4252'
     ctx.lineWidth = 1
-    for (let i = -4; i <= 4; i++) {
-      const a = project({
-        x: mid.x + (i / 4) * span,
-        y: mid.y - span,
-        z: mid.z - span,
-      })
-      const b = project({
-        x: mid.x + (i / 4) * span,
-        y: mid.y + span,
-        z: mid.z - span,
-      })
-      const c = project({
-        x: mid.x - span,
-        y: mid.y + (i / 4) * span,
-        z: mid.z - span,
-      })
-      const d = project({
-        x: mid.x + span,
-        y: mid.y + (i / 4) * span,
-        z: mid.z - span,
-      })
+    const line = (
+      a: { x: number; y: number; z: number },
+      b: { x: number; y: number; z: number },
+    ) => {
+      const pa = project(a)
+      const pb = project(b)
       ctx.beginPath()
-      ctx.moveTo(a.sx, a.sy)
-      ctx.lineTo(b.sx, b.sy)
+      ctx.moveTo(pa.sx, pa.sy)
+      ctx.lineTo(pb.sx, pb.sy)
       ctx.stroke()
-      ctx.beginPath()
-      ctx.moveTo(c.sx, c.sy)
-      ctx.lineTo(d.sx, d.sy)
-      ctx.stroke()
+    }
+    for (let i = 0; i <= steps; i++) {
+      const t = -half + (i / steps) * 2 * half
+      // bottom & top (y = ±half): grid in x/z
+      line(
+        { x: mid.x + t, y: mid.y - half, z: mid.z - half },
+        { x: mid.x + t, y: mid.y - half, z: mid.z + half },
+      )
+      line(
+        { x: mid.x - half, y: mid.y - half, z: mid.z + t },
+        { x: mid.x + half, y: mid.y - half, z: mid.z + t },
+      )
+      line(
+        { x: mid.x + t, y: mid.y + half, z: mid.z - half },
+        { x: mid.x + t, y: mid.y + half, z: mid.z + half },
+      )
+      line(
+        { x: mid.x - half, y: mid.y + half, z: mid.z + t },
+        { x: mid.x + half, y: mid.y + half, z: mid.z + t },
+      )
+      // back & front (z = ±half): grid in x/y
+      line(
+        { x: mid.x + t, y: mid.y - half, z: mid.z - half },
+        { x: mid.x + t, y: mid.y + half, z: mid.z - half },
+      )
+      line(
+        { x: mid.x - half, y: mid.y + t, z: mid.z - half },
+        { x: mid.x + half, y: mid.y + t, z: mid.z - half },
+      )
+      line(
+        { x: mid.x + t, y: mid.y - half, z: mid.z + half },
+        { x: mid.x + t, y: mid.y + half, z: mid.z + half },
+      )
+      line(
+        { x: mid.x - half, y: mid.y + t, z: mid.z + half },
+        { x: mid.x + half, y: mid.y + t, z: mid.z + half },
+      )
+      // left & right (x = ±half): grid in y/z
+      line(
+        { x: mid.x - half, y: mid.y + t, z: mid.z - half },
+        { x: mid.x - half, y: mid.y + t, z: mid.z + half },
+      )
+      line(
+        { x: mid.x - half, y: mid.y - half, z: mid.z + t },
+        { x: mid.x - half, y: mid.y + half, z: mid.z + t },
+      )
+      line(
+        { x: mid.x + half, y: mid.y + t, z: mid.z - half },
+        { x: mid.x + half, y: mid.y + t, z: mid.z + half },
+      )
+      line(
+        { x: mid.x + half, y: mid.y - half, z: mid.z + t },
+        { x: mid.x + half, y: mid.y + half, z: mid.z + t },
+      )
+    }
+    // outer edges brighter
+    ctx.strokeStyle = '#5a6478'
+    ctx.lineWidth = 1.4
+    const corners = [-half, half]
+    for (const x of corners) {
+      for (const y of corners) {
+        line(
+          { x: mid.x + x, y: mid.y + y, z: mid.z - half },
+          { x: mid.x + x, y: mid.y + y, z: mid.z + half },
+        )
+      }
+      for (const z of corners) {
+        line(
+          { x: mid.x + x, y: mid.y - half, z: mid.z + z },
+          { x: mid.x + x, y: mid.y + half, z: mid.z + z },
+        )
+      }
+    }
+    for (const y of corners) {
+      for (const z of corners) {
+        line(
+          { x: mid.x - half, y: mid.y + y, z: mid.z + z },
+          { x: mid.x + half, y: mid.y + y, z: mid.z + z },
+        )
+      }
     }
 
     if (variant === 'zones') {
@@ -178,8 +242,8 @@ export function RelevanceMap({
     const qProj = project(q)
 
     if (showRays) {
-      ctx.strokeStyle = 'rgba(245,197,24,0.5)'
-      ctx.lineWidth = 1.2
+      ctx.strokeStyle = 'rgba(245,197,24,0.75)'
+      ctx.lineWidth = 2.2
       for (const p of pages) {
         if (p.score < threshold) continue
         const pr = project(p)

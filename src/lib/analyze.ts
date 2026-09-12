@@ -121,10 +121,17 @@ export async function runAnalysis(params: RunParams): Promise<AnalysisBundle> {
     dz /= len
 
     const score = Math.min(1, Math.max(0, pages[i].score))
-    const radius = (1 - score) ** 1.15 * 2.8 + 0.12
-    pages[i].x = dx * radius
-    pages[i].y = dy * radius
-    pages[i].z = dz * radius
+    // Larger radii so rays between query and pages are clearly visible
+    const radius = (1 - score) ** 1.05 * 6.2 + 0.85
+    // Slight angular fan so nodes don't stack on one ray
+    const twist = ((i % 7) - 3) * 0.08
+    const cosT = Math.cos(twist)
+    const sinT = Math.sin(twist)
+    const rx = dx * cosT - dy * sinT
+    const ry = dx * sinT + dy * cosT
+    pages[i].x = rx * radius
+    pages[i].y = ry * radius
+    pages[i].z = dz * radius * 1.15
   }
 
   const sites = [...new Set(siteLines.map(hostOf))]
