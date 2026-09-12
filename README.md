@@ -1,32 +1,91 @@
-# React + TypeScript + Vite
+# Карта релевантности
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React-приложение для **semantic SEO / GEO**: сравнивает несколько сайтов с поисковым запросом в векторном пространстве и показывает, какие страницы и фрагменты ближе к теме.
 
-Currently, two official plugins are available:
+Идея как у semantic map / Semantic Relevance Analyzer: чанки контента → embeddings → cosine similarity к запросу → 2D/3D-карта, порог релевантности и таблицы покрытия.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Возможности
 
-## React Compiler
+- Запрос + список сайтов + лимит страниц на сайт
+- Балл страницы: по лучшему фрагменту или по всей странице
+- Порог релевантности (слайдер) → пересчёт покрытия
+- Таблица «Покрытие темы по сайтам»
+- Вкладки: **Карта**, **Таблица страниц**, **Фрагменты страниц**
+- 3D / 2D карта с лучами к запросу (жёлтый ромб = запрос)
+- Опционально OpenAI embeddings + без ключа local pseudo-embed
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+> Сейчас сбор страниц — **синтетический корпус** по доменам (в браузере полноценный crawl упирается в CORS). Для демо и отладки пайплайна этого достаточно.
 
-## Expanding the Oxlint configuration
+## Стек
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+- React 19 + TypeScript + Vite
+- Canvas-визуализация карты (вращение мышью в 3D)
+- OpenAI API (опционально) для `text-embedding-3-small`
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## Требования
+
+- Node.js 20+ (рекомендуется LTS)
+- npm
+
+## Установка и запуск
+
+```bash
+git clone git@github.com:Bartlby1987/test2.git
+cd test2
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Откройте адрес из терминала (обычно http://127.0.0.1:5173/).
+
+### Сборка production
+
+```bash
+npm run build
+npm run preview
+```
+
+Артефакты — в каталоге `dist/` (готово к раздаче любым static host: Nginx, GitHub Pages, Cloudflare Pages, Vercel и т.п.).
+
+## Как пользоваться
+
+1. В сайдбаре укажите **запрос** (например: `сканирование сайта на ошибки`).
+2. Перечислите **сайты** (по одному URL/домену на строку).
+3. При необходимости задайте макс. страниц, 3D/2D, режим балла, «Лучи к запросу».
+4. (Опционально) вставьте OpenAI API key — иначе используется локальный embed.
+5. Нажмите **«Собрать данные»**.
+6. Смотрите карту, двигайте **порог релевантности**, переключайте вкладки.
+
+Ключ при вводе сохраняется в `localStorage` браузера (`openai_key`) и **не** уходит в git.
+
+## Структура проекта
+
+```
+src/
+  App.tsx                 # layout: сайдбар + основная область
+  components/
+    Sidebar.tsx           # параметры запуска
+    CoverageTable.tsx     # покрытие по сайтам
+    RelevanceMap.tsx      # 2D/3D карта
+    PagesTable.tsx
+    FragmentsTable.tsx
+  lib/
+    crawl.ts              # сбор/генерация страниц + чанкинг
+    embeddings.ts         # local / OpenAI embeddings
+    math.ts               # cosine, PCA
+    analyze.ts            # пайплайн анализа и сводки
+  types.ts
+```
+
+## Скрипты
+
+| Команда        | Описание              |
+|----------------|-----------------------|
+| `npm run dev`  | Dev-сервер Vite       |
+| `npm run build`| Typecheck + production build |
+| `npm run preview` | Превью сборки     |
+| `npm run lint` | Oxlint                |
+
+## Лицензия
+
+Приватный учебный/демо-проект.
