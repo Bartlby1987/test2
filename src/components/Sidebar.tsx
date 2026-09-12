@@ -41,7 +41,9 @@ export function Sidebar(props: Props) {
           rows={5}
           value={props.sitesText}
           onChange={(e) => props.onChange({ sitesText: e.target.value })}
+          placeholder={'https://example.com\nhttps://another.site'}
         />
+        <span className="muted">Любые URL — по одному на строку. Реальный обход страниц.</span>
       </label>
 
       <label className="field">

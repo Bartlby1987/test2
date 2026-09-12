@@ -128,7 +128,8 @@ body,
 
 .runs,
 .progress,
-.hint {
+.hint,
+.sidebar .muted {
   color: var(--muted);
   font-size: 0.85rem;
   margin: 0;
