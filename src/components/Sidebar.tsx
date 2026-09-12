@@ -10,8 +10,6 @@ type Props = {
   apiKey: string
   loading: boolean
   progress: string | null
-  runsLeft: number
-  runsTotal: number
   onChange: (patch: Partial<{
     query: string
     sitesText: string
@@ -129,10 +127,6 @@ export function Sidebar(props: Props) {
       </button>
 
       {props.progress && <p className="progress">{props.progress}</p>}
-
-      <p className="runs">
-        Запусков осталось: {props.runsLeft} из {props.runsTotal}
-      </p>
     </aside>
   )
 }

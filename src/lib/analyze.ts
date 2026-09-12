@@ -107,9 +107,6 @@ export async function runAnalysis(params: RunParams): Promise<AnalysisBundle> {
   }
 
   const sites = [...new Set(siteLines.map(hostOf))]
-  const stored = Number(localStorage.getItem('runs_left') ?? '10')
-  const runsLeft = Math.max(0, stored - 1)
-  localStorage.setItem('runs_left', String(runsLeft))
 
   return {
     query,
@@ -117,8 +114,6 @@ export async function runAnalysis(params: RunParams): Promise<AnalysisBundle> {
     fragments: pages.flatMap((p) => p.fragments),
     queryPoint,
     siteColors: colorForSites(sites),
-    runsLeft,
-    runsTotal: 10,
   }
 }
 

@@ -39,6 +39,4 @@ export type AnalysisBundle = {
   fragments: Fragment[]
   queryPoint: { x: number; y: number; z: number }
   siteColors: Record<string, string>
-  runsLeft: number
-  runsTotal: number
 }

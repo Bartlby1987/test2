@@ -34,9 +34,6 @@ export default function App() {
   const [progress, setProgress] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [bundle, setBundle] = useState<AnalysisBundle | null>(null)
-  const [runsLeft, setRunsLeft] = useState(() =>
-    Number(localStorage.getItem('runs_left') ?? '10'),
-  )
 
   const pages = useMemo(
     () => (bundle ? withScoreMode(bundle.pages, scoreMode) : []),
@@ -65,7 +62,6 @@ export default function App() {
         onProgress: setProgress,
       })
       setBundle(result)
-      setRunsLeft(result.runsLeft)
       setTab('map')
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -87,8 +83,6 @@ export default function App() {
         apiKey={apiKey}
         loading={loading}
         progress={progress}
-        runsLeft={runsLeft}
-        runsTotal={10}
         onChange={(patch) => {
           if (patch.query !== undefined) setQuery(patch.query)
           if (patch.sitesText !== undefined) setSitesText(patch.sitesText)
