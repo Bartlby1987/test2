@@ -15,8 +15,8 @@ import { RelevanceMap } from './components/RelevanceMap'
 import './App.css'
 
 const DEFAULT_SITES = `https://site-analyzer.ru/
-https://wordchecker.ru/
-https://rocketcrawler.ru/`
+https://rocketcrawler.ru/
+https://lenta.ru/`
 
 export default function App() {
   const [query, setQuery] = useState('сканирование сайта на ошибки')

@@ -10,7 +10,15 @@ type Props = {
   variant: MapVariant
 }
 
-type Pt = { x: number; y: number; z: number; color: string; size: number; label: string; alpha: number }
+type Pt = {
+  x: number
+  y: number
+  z: number
+  color: string
+  size: number
+  label: string
+  alpha: number
+}
 
 export function RelevanceMap({
   data,
@@ -22,9 +30,13 @@ export function RelevanceMap({
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
-  const [angles, setAngles] = useState({ yaw: 0.6, pitch: 0.35 })
-  const drag = useRef<{ x: number; y: number; yaw: number; pitch: number } | null>(null)
+  const [angles, setAngles] = useState({ yaw: 0.55, pitch: 0.32 })
+  const drag = useRef<{ x: number; y: number; yaw: number; pitch: number } | null>(
+    null,
+  )
   const [hover, setHover] = useState<string | null>(null)
+
+  const above = pages.filter((p) => p.score >= threshold).length
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -48,8 +60,8 @@ export function RelevanceMap({
       y: p.y,
       z: p.z,
       color: data.siteColors[p.site] ?? '#888',
-      size: p.score >= threshold ? 7 : 4,
-      alpha: p.score >= threshold ? 1 : 0.35,
+      size: 3.5 + p.score * 9,
+      alpha: p.score >= threshold ? 1 : 0.28,
       label: `${p.title}\n${p.url}\nбалл: ${p.score.toFixed(3)}`,
     }))
 
@@ -58,7 +70,7 @@ export function RelevanceMap({
       y: data.queryPoint.y,
       z: data.queryPoint.z,
       color: '#f5c518',
-      size: 12,
+      size: 13,
       alpha: 1,
       label: `Запрос: ${data.query}`,
     }
@@ -94,28 +106,43 @@ export function RelevanceMap({
         const z1 = -x * sy + z * cy
         const y1 = y * cp - z1 * sp
         const z2 = y * sp + z1 * cp
-        const scale = 220 / (1.6 + z2 * 0.35)
+        const scale = 240 / (1.55 + z2 * 0.35)
         return {
           sx: w / 2 + x1 * scale,
-          sy: h / 2 - y1 * scale,
+          sy: h / 2 - y1 * scale - 12,
           depth: z2,
         }
       }
-      const scale = Math.min(w, h) * 0.38
+      const scale = Math.min(w, h) * 0.4
       return { sx: w / 2 + x * scale * 2, sy: h / 2 - y * scale * 2, depth: 0 }
     }
 
-    // background + grid
     ctx.fillStyle = '#0e1117'
     ctx.fillRect(0, 0, w, h)
 
     ctx.strokeStyle = '#2a2f3a'
     ctx.lineWidth = 1
     for (let i = -4; i <= 4; i++) {
-      const a = project({ x: mid.x + (i / 4) * span, y: mid.y - span, z: mid.z - span })
-      const b = project({ x: mid.x + (i / 4) * span, y: mid.y + span, z: mid.z - span })
-      const c = project({ x: mid.x - span, y: mid.y + (i / 4) * span, z: mid.z - span })
-      const d = project({ x: mid.x + span, y: mid.y + (i / 4) * span, z: mid.z - span })
+      const a = project({
+        x: mid.x + (i / 4) * span,
+        y: mid.y - span,
+        z: mid.z - span,
+      })
+      const b = project({
+        x: mid.x + (i / 4) * span,
+        y: mid.y + span,
+        z: mid.z - span,
+      })
+      const c = project({
+        x: mid.x - span,
+        y: mid.y + (i / 4) * span,
+        z: mid.z - span,
+      })
+      const d = project({
+        x: mid.x + span,
+        y: mid.y + (i / 4) * span,
+        z: mid.z - span,
+      })
       ctx.beginPath()
       ctx.moveTo(a.sx, a.sy)
       ctx.lineTo(b.sx, b.sy)
@@ -143,7 +170,7 @@ export function RelevanceMap({
           else ctx.lineTo(pr.sx, pr.sy)
         })
         ctx.closePath()
-        ctx.fillStyle = hexAlpha(data.siteColors[site] ?? '#888', 0.12)
+        ctx.fillStyle = hexAlpha(data.siteColors[site] ?? '#888', 0.14)
         ctx.fill()
       }
     }
@@ -151,8 +178,8 @@ export function RelevanceMap({
     const qProj = project(q)
 
     if (showRays) {
-      ctx.strokeStyle = 'rgba(245,197,24,0.55)'
-      ctx.lineWidth = 1.4
+      ctx.strokeStyle = 'rgba(245,197,24,0.5)'
+      ctx.lineWidth = 1.2
       for (const p of pages) {
         if (p.score < threshold) continue
         const pr = project(p)
@@ -171,7 +198,6 @@ export function RelevanceMap({
     for (const p of drawable) {
       ctx.globalAlpha = p.alpha
       if (p.page === null) {
-        // diamond for query
         const s = p.size
         ctx.fillStyle = p.color
         ctx.beginPath()
@@ -182,8 +208,14 @@ export function RelevanceMap({
         ctx.closePath()
         ctx.fill()
         ctx.strokeStyle = '#fff3a0'
-        ctx.lineWidth = 1
+        ctx.lineWidth = 1.2
         ctx.stroke()
+
+        ctx.globalAlpha = 1
+        ctx.fillStyle = '#fafafa'
+        ctx.font = '600 12px sans-serif'
+        const label = data.query.length > 42 ? `${data.query.slice(0, 40)}…` : data.query
+        ctx.fillText(label, p.sx + s + 8, p.sy + 4)
       } else {
         ctx.beginPath()
         ctx.fillStyle = p.color
@@ -193,12 +225,15 @@ export function RelevanceMap({
       ctx.globalAlpha = 1
     }
 
-    // legend
     const legend = [
-      ...Object.entries(data.siteColors).map(([site, color]) => ({ label: site, color, diamond: false })),
+      ...Object.entries(data.siteColors).map(([site, color]) => ({
+        label: site,
+        color,
+        diamond: false,
+      })),
       { label: 'Запрос', color: '#f5c518', diamond: true },
     ]
-    let ly = h - 16 - legend.length * 18
+    let ly = 18
     ctx.font = '12px sans-serif'
     for (const item of legend) {
       if (item.diamond) {
@@ -239,7 +274,10 @@ export function RelevanceMap({
         const dy = ev.clientY - drag.current.y
         setAngles({
           yaw: drag.current.yaw + dx * 0.01,
-          pitch: Math.max(-1.2, Math.min(1.2, drag.current.pitch + dy * 0.01)),
+          pitch: Math.max(
+            -1.2,
+            Math.min(1.2, drag.current.pitch + dy * 0.01),
+          ),
         })
         return
       }
@@ -247,10 +285,10 @@ export function RelevanceMap({
       const mx = ev.clientX - rect.left
       const my = ev.clientY - rect.top
       let found: string | null = null
-      for (const p of drawable) {
+      for (const p of [...drawable].reverse()) {
         const dx = mx - p.sx
         const dy = my - p.sy
-        if (dx * dx + dy * dy < (p.size + 4) ** 2) {
+        if (dx * dx + dy * dy < (p.size + 5) ** 2) {
           found = p.label
           break
         }
@@ -259,7 +297,12 @@ export function RelevanceMap({
     }
 
     const onDown = (ev: MouseEvent) => {
-      drag.current = { x: ev.clientX, y: ev.clientY, yaw: angles.yaw, pitch: angles.pitch }
+      drag.current = {
+        x: ev.clientX,
+        y: ev.clientY,
+        yaw: angles.yaw,
+        pitch: angles.pitch,
+      }
     }
     const onUp = () => {
       drag.current = null
@@ -276,9 +319,18 @@ export function RelevanceMap({
   }, [data, pages, threshold, dim, showRays, variant, angles, hover])
 
   return (
-    <div className="plot-wrap" ref={wrapRef}>
-      <canvas ref={canvasRef} className="map-canvas" />
-      {dim === '3d' && <div className="map-hint">Тяните мышью, чтобы вращать</div>}
+    <div className="map-panel">
+      <div className="plot-wrap" ref={wrapRef}>
+        <canvas ref={canvasRef} className="map-canvas" />
+        {dim === '3d' && (
+          <div className="map-hint">Тяните мышью, чтобы вращать</div>
+        )}
+      </div>
+      <p className="map-caption">
+        Показано {above} из {pages.length} страниц выше порога. Ближе к жёлтому
+        ромбу — выше балл к запросу; рядом друг с другом — похожий смысл; размер
+        точки — близость к запросу; цвет — сайт.
+      </p>
     </div>
   )
 }

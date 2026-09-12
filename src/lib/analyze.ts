@@ -99,11 +99,32 @@ export async function runAnalysis(params: RunParams): Promise<AnalysisBundle> {
   })
 
   const coords = pca([queryVec, ...layoutVecs], 3)
-  const queryPoint = { x: coords[0][0], y: coords[0][1], z: coords[0][2] }
+  const q = coords[0]
+
+  // Hybrid map: direction from PCA (semantic neighbors), radius from score
+  // (closer to query diamond = higher relevance — easier to read than raw PCA).
   for (let i = 0; i < pages.length; i++) {
-    pages[i].x = coords[i + 1][0]
-    pages[i].y = coords[i + 1][1]
-    pages[i].z = coords[i + 1][2]
+    let dx = coords[i + 1][0] - q[0]
+    let dy = coords[i + 1][1] - q[1]
+    let dz = coords[i + 1][2] - q[2]
+    let len = Math.hypot(dx, dy, dz)
+    if (len < 1e-9) {
+      // identical vector — fan out by site index
+      const a = (i + 1) * 1.7
+      dx = Math.cos(a)
+      dy = Math.sin(a)
+      dz = Math.sin(a * 0.5)
+      len = Math.hypot(dx, dy, dz)
+    }
+    dx /= len
+    dy /= len
+    dz /= len
+
+    const score = Math.min(1, Math.max(0, pages[i].score))
+    const radius = (1 - score) ** 1.15 * 2.8 + 0.12
+    pages[i].x = dx * radius
+    pages[i].y = dy * radius
+    pages[i].z = dz * radius
   }
 
   const sites = [...new Set(siteLines.map(hostOf))]
@@ -112,7 +133,7 @@ export async function runAnalysis(params: RunParams): Promise<AnalysisBundle> {
     query,
     pages,
     fragments: pages.flatMap((p) => p.fragments),
-    queryPoint,
+    queryPoint: { x: 0, y: 0, z: 0 },
     siteColors: colorForSites(sites),
   }
 }
